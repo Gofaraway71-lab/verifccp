@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
-import { AlertCircle, CheckCircle2, Copy, Download, FilePlus2, Plus, Trash2, Zap } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, Copy, Download, FilePlus2, Plus, Trash2, Upload, Zap } from 'lucide-react';
 import {
   BuilderBeneficiaryRow,
   FileBuilderConfig,
   generateCcpPaymentFile,
+  parseImportedPaymentText,
 } from '../engine/fileBuilder';
 import { AnalysisReport, ValidationProfile } from '../types/ccp';
-import { decodeRawStringAsFile } from '../engine/fileParser';
+import { decodeRawStringAsFile, readAndDecodeFile } from '../engine/fileParser';
 import { detectFileFormat } from '../engine/formatDetector';
 import { analyzeDecodedFile } from '../engine/analyzer';
 import { formatDZD, maskAccountNumber } from '../engine/cryptoKeys';
@@ -41,6 +42,30 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
   const [beneficiaries, setBeneficiaries] = useState<BuilderBeneficiaryRow[]>(INITIAL_BENEFICIARIES);
   const [copied, setCopied] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importNotice, setImportNotice] = useState<string | null>(null);
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const decoded = await readAndDecodeFile(file);
+      const parsed = parseImportedPaymentText(decoded.rawText);
+      if (parsed.formatKind) setFormatKind(parsed.formatKind);
+      if (parsed.ordonnateurAccount) setOrdonnateurAccount(parsed.ordonnateurAccount);
+      if (parsed.month) setMonth(parsed.month);
+      if (parsed.year) setYear(parsed.year);
+      if (parsed.beneficiaries.length > 0) {
+        setBeneficiaries(parsed.beneficiaries);
+      }
+      setImportNotice(parsed.importLogs.join(' | '));
+      setTimeout(() => setImportNotice(null), 5000);
+    } catch (err) {
+      setImportNotice(`Erreur d'import : ${err instanceof Error ? err.message : 'Inconnue'}`);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const config: FileBuilderConfig = useMemo(
     () => ({
@@ -160,6 +185,21 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.dat,.csv,.xlsx,.xls"
+            onChange={handleFileImport}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            <Upload className="h-3.5 w-3.5 text-[#0F2942]" />
+            <span>Importer un fichier existant</span>
+          </button>
           <button
             type="button"
             onClick={handleLoadSample}
@@ -170,6 +210,19 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
           </button>
         </div>
       </div>
+
+      {importNotice && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 p-3.5 text-xs text-blue-900 flex items-center justify-between">
+          <span className="font-medium">{importNotice}</span>
+          <button
+            type="button"
+            onClick={() => setImportNotice(null)}
+            className="text-blue-700 hover:text-blue-900 text-xs font-semibold ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Form Configuration & Beneficiaries */}

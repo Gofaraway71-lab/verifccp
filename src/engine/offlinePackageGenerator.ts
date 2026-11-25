@@ -302,7 +302,7 @@ export function generateStandaloneOfflineHtml(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VérifCCP — Application Autonome Hors-Ligne</title>
+  <title>VérifCCP — Application Globale Autonome Hors-Ligne</title>
   <style>
     :root {
       --primary: #0F2942;
@@ -443,8 +443,9 @@ export function generateStandaloneOfflineHtml(): string {
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('tab-calc')">1. Calculateur Clé CCP & RIB</button>
-      <button class="tab-btn" onclick="switchTab('tab-verify')">2. Vérificateur de Fichier 62 car.</button>
-      <button class="tab-btn" onclick="switchTab('tab-guide')">3. Guide de Déploiement PC Isolé</button>
+      <button class="tab-btn" onclick="switchTab('tab-verify')">2. Analyseur de Fichier (62 car.)</button>
+      <button class="tab-btn" onclick="switchTab('tab-builder')">3. Créateur de Fichier (Builder)</button>
+      <button class="tab-btn" onclick="switchTab('tab-guide')">4. Guide &amp; Banques Algériennes</button>
     </div>
 
     <!-- TAB 1: CALCULATOR -->
@@ -455,7 +456,7 @@ export function generateStandaloneOfflineHtml(): string {
           <div class="form-group">
             <label for="calc-type">Type de Compte</label>
             <select id="calc-type" onchange="toggleCalcFields()">
-              <option value="bank">RIB Bancaire Algérien (20 chiffres - Mod 97)</option>
+              <option value="bank">RIB Bancaire Algérien (20 chiffres - Mod 97 Instruction 62-94)</option>
               <option value="rip">RIP Algérie Poste (00799999 + CCP 10 car + Clé RIP)</option>
               <option value="ccp">Compte CCP Algérie Poste Classique (00000000 / Clé CCP)</option>
             </select>
@@ -469,92 +470,145 @@ export function generateStandaloneOfflineHtml(): string {
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 8px;">
               <div>
                 <label for="agency-code">Agence (5 chiffres)</label>
-                <input type="text" id="agency-code" placeholder="00101" maxlength="5">
+                <input type="text" id="agency-code" placeholder="00341" value="00341" maxlength="5">
               </div>
               <div>
                 <label for="bank-account">N° Compte (10 chiffres)</label>
-                <input type="text" id="bank-account" placeholder="0012345678" maxlength="10">
+                <input type="text" id="bank-account" placeholder="1681930101" value="1681930101" maxlength="10">
               </div>
             </div>
           </div>
 
           <div id="field-ccp" class="form-group" style="display: none;">
             <label for="ccp-number">Numéro de Compte CCP (1 à 10 chiffres)</label>
-            <input type="text" id="ccp-number" placeholder="Exemple: 300076 ou 9396759">
+            <input type="text" id="ccp-number" placeholder="Exemple: 300076 ou 5040">
           </div>
 
           <div class="form-group">
             <label for="actual-key">Clé Actuelle à Vérifier (facultatif)</label>
-            <input type="text" id="actual-key" placeholder="Ex: 86 ou 69" maxlength="2">
+            <input type="text" id="actual-key" placeholder="Ex: 48, 86 ou 69" maxlength="2" value="48">
           </div>
 
           <button class="btn" onclick="calculateKeys()">Calculer et Vérifier la Clé</button>
         </div>
 
         <div>
-          <label>Résultat du Calcul :</label>
-          <div id="calc-result" class="result-box">Renseignez les champs ci-contre et cliquez sur "Calculer".</div>
+          <label>Résultat du Calcul &amp; Détail Mathématique :</label>
+          <div id="calc-result" class="result-box">Cliquez sur "Calculer et Vérifier la Clé".</div>
         </div>
       </div>
     </div>
 
     <!-- TAB 2: FILE VERIFIER -->
     <div id="tab-verify" class="panel">
-      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Contrôle Rapide de Lignes 62 Caractères (Copier / Coller)</h2>
+      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Analyseur Complet de Fichiers de Virement (62 caractères)</h2>
       <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
-        Collez les premières lignes de votre fichier (ou un extrait de virement) pour vérifier la structure exacte de 62 caractères,
-        le préfixe *, les montants, les clés et l'en-tête.
+        Collez les lignes de votre fichier de virement (en-tête ligne 1 et bénéficiaires lignes 2+) pour contrôler la structure,
+        les montants, le total global et la validité des clés de chaque compte.
       </p>
 
       <div class="form-group">
         <label for="file-content">Contenu du Fichier (Largeur Fixe 62 Caractères)</label>
-        <textarea id="file-content" rows="8" placeholder="*0079999900003000768600000080000000000002112026              0
+        <textarea id="file-content" rows="10" placeholder="*0079999900003000768600000080000000000002112026              0
 *007999990009396759690000004000000KALKOUL    ABDERRAHMANE    1
-*007999990004509479680000004000000TALBI       KHIER          1"></textarea>
+*007999990004509479680000004000000TALBI       KHIER          1">*0079999900003000768600000080000000000002112026              0
+*007999990009396759690000004000000KALKOUL    ABDERRAHMANE    1
+*007999990004509479680000004000000TALBI       KHIER          1</textarea>
       </div>
 
-      <button class="btn" onclick="verifyFileLines()">Analyser la Conformité Locale</button>
+      <button class="btn" onclick="verifyFileLines()">Lancer l'Analyse Complète</button>
 
-      <div id="verify-result" class="result-box" style="margin-top: 14px;">Collez votre extrait et cliquez sur "Analyser".</div>
+      <div id="verify-result" class="result-box" style="margin-top: 14px;">Collez votre fichier et cliquez sur "Lancer l'Analyse".</div>
     </div>
 
-    <!-- TAB 3: GUIDE -->
+    <!-- TAB 3: FILE BUILDER -->
+    <div id="tab-builder" class="panel">
+      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Créateur de Fichier de Virement Conforme (62 car.)</h2>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px;">
+        Générez instantanément un fichier de virement formaté à la norme 62 caractères avec en-tête et lignes bénéficiaires valides.
+      </p>
+
+      <div class="grid">
+        <div>
+          <div class="form-group">
+            <label for="build-prefix">Préfixe de Compte / Banque</label>
+            <select id="build-prefix">
+              <option value="00799999">RIP Algérie Poste (00799999)</option>
+              <option value="00000000">CCP Non-RIP (00000000)</option>
+              <option value="01400341">RIB Bancaire ABC Bank (01400341)</option>
+              <option value="00100101">RIB Bancaire BNA (00100101)</option>
+              <option value="00200050">RIB Bancaire BEA (00200050)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="build-date">Date de Valeur (JJMMAAAA)</label>
+            <input type="text" id="build-date" value="03112026" maxlength="8">
+          </div>
+
+          <div class="form-group">
+            <label for="build-beneficiaries">Bénéficiaires (Format: Compte|MontantDA|NomPrenom - un par ligne)</label>
+            <textarea id="build-beneficiaries" rows="5">300076|40000.00|BENALI KARIM
+9396759|40000.00|KALKOUL ABDERRAHMANE</textarea>
+          </div>
+
+          <button class="btn" onclick="buildFileContent()">Générer le Fichier</button>
+        </div>
+
+        <div>
+          <label>Fichier Résultat Généré (62 car.) :</label>
+          <textarea id="build-result" rows="10" readonly style="font-family: monospace; font-size: 0.8rem; background: #F8FAFC; margin-top: 6px;"></textarea>
+          <button class="btn btn-secondary" style="margin-top: 8px;" onclick="downloadBuiltFile()">Télécharger le Fichier (.txt)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: GUIDE & BANKS -->
     <div id="tab-guide" class="panel">
-      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Guide d'Installation & Déploiement sur un Autre PC</h2>
+      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">Guide d'Installation &amp; Répertoire des Banques Algériennes</h2>
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div>
-          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 8px;">Méthode 1 : Clé USB & PC 100% Isolé</h3>
+          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 8px;">Méthode 1 : Clé USB &amp; PC 100% Isolé</h3>
           <ol style="font-size: 0.85rem; padding-left: 20px; line-height: 1.7;">
-            <li>Téléchargez le <strong>Pack Autonome (.ZIP)</strong> depuis le poste connecté.</li>
-            <li>Copiez le fichier ZIP sur votre clé USB sécurisée.</li>
-            <li>Branchez la clé USB sur le PC cible (sans internet).</li>
-            <li>Extrayez les fichiers dans un dossier local (ex. <code>C:\\VerifCCP\\</code>).</li>
-            <li>Double-cliquez sur <strong>LANCER_VERIFCCP_WINDOWS.bat</strong> ou sur ce fichier HTML.</li>
-            <li>L'application fonctionne immédiatement dans Edge, Chrome ou Firefox.</li>
+            <li>Copiez ce fichier HTML ou le Pack ZIP sur une clé USB.</li>
+            <li>Branchez la clé sur le poste cible non connecté à Internet.</li>
+            <li>Ouvrez le fichier HTML dans n'importe quel navigateur (Edge, Chrome, Firefox).</li>
+            <li>Aucune installation de logiciel tiers requise.</li>
           </ol>
         </div>
 
         <div>
-          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 8px;">Méthode 2 : Serveur Intranet Réseau Local (LAN)</h3>
+          <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 8px;">Méthode 2 : Mode PWA (Application Autonome)</h3>
           <p style="font-size: 0.85rem; line-height: 1.6; margin-bottom: 10px;">
-            Pour partager VérifCCP avec tous les agents comptables du bureau sans installer sur chaque poste :
+            Dans Microsoft Edge ou Google Chrome, cliquez sur le menu du navigateur (3 points) et sélectionnez <strong>"Installer VérifCCP"</strong> pour l'exécuter dans sa propre fenêtre de bureau dédiée.
           </p>
-          <ol style="font-size: 0.85rem; padding-left: 20px; line-height: 1.7;">
-            <li>Placez le dossier sur un poste de votre réseau local.</li>
-            <li>Lancez <strong>SERVEUR_LOCAL_PORTABLE.bat</strong> (sur Windows) ou <strong>DEMARRER_SERVEUR_LINUX.sh</strong>.</li>
-            <li>Tous les postes accèdent via l'adresse IP locale : <code>http://192.168.1.X:8080/</code></li>
-            <li>Aucun accès Internet requis pour l'agence.</li>
-          </ol>
         </div>
       </div>
 
-      <div style="margin-top: 20px; padding: 14px; background: #F1F5F9; border-radius: 6px;">
-        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Raccourci Bureau Windows :</h4>
-        <p style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">
-          Double-cliquez sur <strong>CREER_RACCOURCI_BUREAU.vbs</strong> inclus dans le pack pour installer
-          automatiquement une icône "VérifCCP" sur le Bureau Windows de l'utilisateur.
-        </p>
+      <div style="margin-top: 20px;">
+        <h3 style="font-size: 0.95rem; color: var(--primary); margin-bottom: 8px;">Répertoire des Banques Algériennes (Codes Principaux)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Sigle</th>
+              <th>Établissement Bancaire</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>001</td><td>BNA</td><td>Banque Nationale d'Algérie</td></tr>
+            <tr><td>002</td><td>BEA</td><td>Banque Extérieure d'Algérie</td></tr>
+            <tr><td>003</td><td>BADR</td><td>Banque de Développement Rurale</td></tr>
+            <tr><td>004</td><td>CPA</td><td>Crédit Populaire d'Algérie</td></tr>
+            <tr><td>005</td><td>BDL</td><td>Banque de Développement Local</td></tr>
+            <tr><td>006</td><td>CNEP</td><td>Caisse Nationale d'Epargne et de Prévoyance</td></tr>
+            <tr><td>007</td><td>ALGÉRIE POSTE</td><td>CCP / BaridiMob (Algérie Poste)</td></tr>
+            <tr><td>008</td><td>TRÉSOR</td><td>Trésor Public Algérien</td></tr>
+            <tr><td>014</td><td>ABC BANK</td><td>Arab Banking Corporation Algeria</td></tr>
+            <tr><td>017</td><td>AGR</td><td>Arab General Bank / Al Salam Bank Algérie</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
