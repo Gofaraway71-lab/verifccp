@@ -1,6 +1,10 @@
-const { app, BrowserWindow, dialog } = require('electron');
-const path = require('path');
-const fs = require('fs');
+import { app, BrowserWindow, dialog } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -17,7 +21,7 @@ function createWindow() {
     },
   });
 
-  const distIndexPath = path.join(__dirname, '..', 'dist', 'index.html');
+  const distIndexPath = path.join(__dirname, 'dist', 'index.html');
 
   if (!fs.existsSync(distIndexPath)) {
     dialog.showErrorBox(
