@@ -248,11 +248,20 @@ export function ResultsView({ report, privacyMode, onGoImport, initialFilter }: 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
+              onClick={() => exportReportPDF(report, privacyMode)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#0F2942] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#163A5C] transition-colors whitespace-nowrap shadow-sm"
+              title="Générer un fichier PDF récapitulatif de l'analyse, incluant les détails et suggestions des anomalies détectées"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Rapport PDF récapitulatif & anomalies</span>
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 const res = generateSimpleCompliancePdf(report, { privacyMode });
                 setSimplePdfFeedback(res);
               }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#0F2942] px-3 py-2 text-xs font-medium text-white hover:bg-[#163A5C] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <Download className="h-3.5 w-3.5" />
               <span>PDF simple</span>
@@ -278,14 +287,6 @@ export function ResultsView({ report, privacyMode, onGoImport, initialFilter }: 
                 <span>PDF filtré ({filteredAnomalies.length})</span>
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => exportReportPDF(report, privacyMode)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>PDF complet</span>
-            </button>
             <button
               type="button"
               onClick={() => setSubTab('pdf')}

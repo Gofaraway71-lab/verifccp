@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, Copy, Download, FilePlus2, Plus, Trash2, Upload, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, Download, FilePlus2, Plus, Search, Trash2, Upload, Zap } from 'lucide-react';
 import {
   BuilderBeneficiaryRow,
   FileBuilderConfig,
@@ -44,6 +44,18 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
   const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [builderSearchQuery, setBuilderSearchQuery] = useState('');
+
+  const filteredBeneficiaries = useMemo(() => {
+    const q = builderSearchQuery.trim().toLowerCase();
+    if (!q) return beneficiaries;
+    return beneficiaries.filter(
+      (b) =>
+        b.account.toLowerCase().includes(q) ||
+        b.beneficiaryName.toLowerCase().includes(q) ||
+        b.amountDZD.toLowerCase().includes(q)
+    );
+  }, [beneficiaries, builderSearchQuery]);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -319,10 +331,10 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
 
           {/* Beneficiaries List */}
           <div className="rounded-md border border-slate-200 bg-white p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">
-                  2. Liste des bénéficiaires ({beneficiaries.length})
+                  2. Liste des bénéficiaires ({filteredBeneficiaries.length} / {beneficiaries.length})
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Chaque ligne génère un enregistrement de type 1 de 62 caractères.
@@ -331,18 +343,37 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
               <button
                 type="button"
                 onClick={handleAddRow}
-                className="inline-flex items-center gap-1.5 rounded bg-[#0F2942] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#163A5C] transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 rounded bg-[#0F2942] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#163A5C] transition-colors whitespace-nowrap shrink-0"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Ajouter un bénéficiaire</span>
               </button>
             </div>
 
-            <div className="space-y-3">
-              {beneficiaries.map((b, idx) => (
+            {/* Global Search Bar */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={builderSearchQuery}
+                onChange={(e) => setBuilderSearchQuery(e.target.value)}
+                placeholder="Rechercher dans les bénéficiaires (compte, nom, montant)..."
+                className="w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400"
+              />
+            </div>
+
+            {filteredBeneficiaries.length === 0 ? (
+              <div className="rounded border border-slate-200 bg-slate-50 py-8 text-center text-xs text-slate-500">
+                Aucun bénéficiaire ne correspond à la recherche « {builderSearchQuery} ».
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredBeneficiaries.map((b) => {
+                  const originalIndex = beneficiaries.findIndex((item) => item.id === b.id);
+                  return (
                 <div key={b.id} className="rounded border border-slate-200 bg-slate-50/60 p-3.5 space-y-3">
                   <div className="flex items-center justify-between text-xs font-medium text-slate-600">
-                    <span>Bénéficiaire #{idx + 1} (Ligne {idx + 2})</span>
+                    <span>Bénéficiaire #{originalIndex + 1} (Ligne {originalIndex + 2})</span>
                     {beneficiaries.length > 1 && (
                       <button
                         type="button"
@@ -392,8 +423,10 @@ export function FileBuilderView({ profiles, onCommitReport, privacyMode }: FileB
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
             <button
               type="button"
