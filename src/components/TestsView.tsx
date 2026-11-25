@@ -33,7 +33,7 @@ export function TestsView({ profiles, onInspectTestSample }: TestsViewProps) {
             Tests automatisés et non-régression
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Exécutez en direct la batterie de 19 tests couvrant les fichiers RIP, non-RIP et RIB bancaires, le calcul strict de la
+            Exécutez en direct la batterie de 20 tests couvrant les fichiers RIP, non-RIP et RIB bancaires (dont l’exactitude de la clé officielle Banque d’Algérie sur 15 chiffres), le calcul strict de la
             clé selon le format du compte, l’étanchéité entre moteurs, les caractères arabes, l’encodage et un lot de 5 000 lignes.
           </p>
         </div>
@@ -44,7 +44,7 @@ export function TestsView({ profiles, onInspectTestSample }: TestsViewProps) {
           className="inline-flex items-center gap-2 rounded-md bg-[#0F2942] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#163A5C] disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
         >
           <Play className="h-4 w-4" />
-          <span>{isRunning ? 'Exécution en cours...' : 'Exécuter les 19 tests'}</span>
+          <span>{isRunning ? 'Exécution en cours...' : 'Exécuter les 20 tests'}</span>
         </button>
       </div>
 
@@ -55,7 +55,7 @@ export function TestsView({ profiles, onInspectTestSample }: TestsViewProps) {
             Batterie de validation prête
           </h2>
           <p className="mt-1 text-xs text-slate-500 max-w-lg mx-auto">
-            Cliquez sur « Exécuter les 19 tests » pour vérifier instantanément chaque règle de conformité RIP,
+            Cliquez sur « Exécuter les 20 tests » pour vérifier instantanément chaque règle de conformité RIP,
             non-RIP et RIB bancaire dans votre navigateur.
           </p>
         </div>

@@ -79,9 +79,29 @@ export function findAlgerianBankByCode(code: string): AlgerianBankInfo | undefin
 }
 
 /**
- * Calcule la clé RIB Bancaire Algérienne (Mod 97 sur 18 chiffres : Code Banque 3 + Code Agence 5 + Compte 10).
+ * Calcule la clé RIB Bancaire Algérienne selon la réglementation officielle de la Banque d'Algérie
+ * (Instruction n°62-94 / usage interbancaire algérien : Modulo 97 appliqué sur Code Agence 5 chiffres + Numéro de Compte 10 chiffres).
+ * Ex. : Banque 014, Agence 00341, Compte 1681930101 -> Base 15 ch. '003411681930101' -> Clé officielle : 48.
  */
 export function computeBankRibKey(bank3: string, agency5: string, account10: string): string | null {
+  const aClean = agency5.replace(/\D/g, '');
+  const cClean = account10.replace(/\D/g, '');
+  if (!aClean || !cClean) return null;
+  if (aClean.length > 5 || cClean.length > 10) return null;
+  const a = aClean.padStart(5, '0');
+  const c = cClean.padStart(10, '0');
+  const base15 = `${a}${c}`;
+  if (/^0{15}$/.test(base15)) return null;
+  const rem = (BigInt(base15) * 100n) % 97n;
+  const key = rem === 0n ? 97n : 97n - rem;
+  return String(key).padStart(2, '0');
+}
+
+/**
+ * Calcule la clé RIB variante 18 chiffres (Banque 3 chiffres + Agence 5 chiffres + Compte 10 chiffres).
+ * Ex. : Banque 014, Agence 00341, Compte 1681930101 -> Base 18 ch. '014003411681930101' -> Clé variante : 01.
+ */
+export function computeBankRibKey18(bank3: string, agency5: string, account10: string): string | null {
   const bClean = bank3.replace(/\D/g, '');
   const aClean = agency5.replace(/\D/g, '');
   const cClean = account10.replace(/\D/g, '');
@@ -93,14 +113,20 @@ export function computeBankRibKey(bank3: string, agency5: string, account10: str
   const base18 = `${b}${a}${c}`;
   if (/^0{18}$/.test(base18)) return null;
   const rem = (BigInt(base18) * 100n) % 97n;
-  const key = 97n - rem;
+  const key = rem === 0n ? 97n : 97n - rem;
   return String(key).padStart(2, '0');
 }
 
 export interface KeyVerificationResult {
   valid: boolean;
   expectedKey: string;
-  matchedKind?: 'RIP (Mod 97 + 85)' | 'RIP (Mod 97 std)' | 'CCP (Poids 4..13)' | 'RIB Bancaire (Mod 97)';
+  matchedKind?:
+    | 'RIP (Mod 97 + 85)'
+    | 'RIP (Mod 97 std)'
+    | 'CCP (Poids 4..13)'
+    | 'RIB Bancaire (Mod 97 - Agence+Compte)'
+    | 'RIB Bancaire (Mod 97 - 18 chiffres)'
+    | 'RIB Bancaire (Mod 97)';
   alternateMatch?: string;
 }
 
@@ -111,6 +137,8 @@ export function validateBankRib(rib20: string): {
   accountNumber: string;
   actualKey: string;
   expectedKey: string;
+  alternateKey?: string;
+  matchedStandard?: 'algerie-15' | 'etendu-18';
   ccpEquivalent: string;
 } {
   const clean = rib20.replace(/\D/g, '');
@@ -130,11 +158,18 @@ export function validateBankRib(rib20: string): {
   const accountNumber = clean.slice(8, 18);
   const actualKey = clean.slice(18, 20);
 
-  const base18 = clean.slice(0, 18);
-  const rem = (BigInt(base18) * 100n) % 97n;
-  const expectedKeyBig = 97n - rem;
-  const expectedKey = String(expectedKeyBig).padStart(2, '0');
-  const valid = actualKey === expectedKey;
+  // Clé officielle Banque d'Algérie sur 15 chiffres (Agence 5 + Compte 10) : ex. 48 pour 014003411681930101
+  const officialKey = computeBankRibKey(bankCode, branchCode, accountNumber) ?? '00';
+  // Variante étendue 18 chiffres (Banque 3 + Agence 5 + Compte 10) : ex. 01 pour 014003411681930101
+  const variant18Key = computeBankRibKey18(bankCode, branchCode, accountNumber) ?? '00';
+
+  const matchesOfficial = actualKey === officialKey;
+  const matchesVariant18 = actualKey === variant18Key;
+  const valid = matchesOfficial || matchesVariant18;
+
+  const expectedKey = matchesVariant18 && !matchesOfficial ? variant18Key : officialKey;
+  const alternateKey = officialKey !== variant18Key ? (matchesVariant18 ? officialKey : variant18Key) : undefined;
+  const matchedStandard = matchesOfficial ? 'algerie-15' : matchesVariant18 ? 'etendu-18' : undefined;
 
   const ccpEquivalent = accountNumber.slice(-10).padStart(10, '0');
 
@@ -145,6 +180,8 @@ export function validateBankRib(rib20: string): {
     accountNumber,
     actualKey,
     expectedKey,
+    alternateKey,
+    matchedStandard,
     ccpEquivalent,
   };
 }
@@ -162,9 +199,21 @@ export function verifyAccountKey(
   if (algorithm === 'bank-rib-mod97') {
     const bankRes = validateBankRib(`${prefix8}${ccp10}${actualKey2}`);
     if (bankRes.valid) {
-      return { valid: true, expectedKey: bankRes.expectedKey, matchedKind: 'RIB Bancaire (Mod 97)' };
+      const label = bankRes.matchedStandard === 'etendu-18'
+        ? 'RIB Bancaire (Mod 97 - 18 chiffres)'
+        : 'RIB Bancaire (Mod 97 - Agence+Compte)';
+      return {
+        valid: true,
+        expectedKey: bankRes.expectedKey,
+        matchedKind: label,
+        alternateMatch: bankRes.alternateKey ? `Variante calculée : ${bankRes.alternateKey}` : undefined,
+      };
     }
-    return { valid: false, expectedKey: bankRes.expectedKey };
+    return {
+      valid: false,
+      expectedKey: bankRes.expectedKey,
+      alternateMatch: bankRes.alternateKey ? `Variante 18 ch. : ${bankRes.alternateKey}` : undefined,
+    };
   }
 
   const rip85 = computeRipKeyOffset85(ccp10) ?? '??';

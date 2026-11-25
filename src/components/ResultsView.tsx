@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -30,10 +30,11 @@ interface ResultsViewProps {
   report: AnalysisReport | null;
   privacyMode: boolean;
   onGoImport: () => void;
+  initialFilter?: AnomalyFilter;
 }
 
 type ResultSubTab = 'anomalies' | 'records' | 'correction' | 'pdf';
-type AnomalyFilter =
+export type AnomalyFilter =
   | 'all'
   | 'critical'
   | 'error'
@@ -52,14 +53,21 @@ const SEVERITY_META: Record<Severity, { label: string; textCls: string }> = {
   info: { label: 'Information', textCls: 'text-slate-600 font-medium' },
 };
 
-export function ResultsView({ report, privacyMode, onGoImport }: ResultsViewProps) {
+export function ResultsView({ report, privacyMode, onGoImport, initialFilter }: ResultsViewProps) {
   const [subTab, setSubTab] = useState<ResultSubTab>('anomalies');
-  const [filter, setFilter] = useState<AnomalyFilter>('all');
+  const [filter, setFilter] = useState<AnomalyFilter>(initialFilter ?? 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [recordFilter, setRecordFilter] = useState<'all' | 'valid' | 'invalid'>('all');
   const [inspectedLineNumber, setInspectedLineNumber] = useState<number | null>(1);
   const [confirmSafeExport, setConfirmSafeExport] = useState(false);
   const [simplePdfFeedback, setSimplePdfFeedback] = useState<SimplePdfExportResult | null>(null);
+
+  useEffect(() => {
+    if (initialFilter) {
+      setFilter(initialFilter);
+      setSubTab('anomalies');
+    }
+  }, [initialFilter, report?.id]);
 
   const filteredAnomalies = useMemo(() => {
     if (!report) return [];

@@ -595,13 +595,23 @@ export function generateStandaloneOfflineHtml(): string {
     }
 
     function computeBankRibKey(bank3, agency5, account10) {
+      const a = agency5.replace(/\\D/g, '').padStart(5, '0');
+      const c = account10.replace(/\\D/g, '').padStart(10, '0');
+      const base15 = a + c;
+      if (/^0{15}$/.test(base15)) return null;
+      const rem = (BigInt(base15) * 100n) % 97n;
+      const key = rem === 0n ? 97n : 97n - rem;
+      return String(key).padStart(2, '0');
+    }
+
+    function computeBankRibKey18(bank3, agency5, account10) {
       const b = bank3.replace(/\\D/g, '').padStart(3, '0');
       const a = agency5.replace(/\\D/g, '').padStart(5, '0');
       const c = account10.replace(/\\D/g, '').padStart(10, '0');
       const base18 = b + a + c;
       if (/^0{18}$/.test(base18)) return null;
       const rem = (BigInt(base18) * 100n) % 97n;
-      const key = 97n - rem;
+      const key = rem === 0n ? 97n : 97n - rem;
       return String(key).padStart(2, '0');
     }
 
@@ -620,16 +630,25 @@ export function generateStandaloneOfflineHtml(): string {
           return;
         }
         const expectedKey = computeBankRibKey(bank, agency, account);
+        const variant18Key = computeBankRibKey18(bank, agency, account);
         const fullRib = bank.padStart(3,'0') + agency.padStart(5,'0') + account.padStart(10,'0') + (expectedKey || '00');
-        const isMatch = actualKey ? actualKey === expectedKey : true;
+        const isMatch = actualKey ? (actualKey === expectedKey || actualKey === variant18Key) : true;
+
+        let keyStatus = '';
+        if (actualKey) {
+          if (actualKey === expectedKey) keyStatus = ' (CONFORME - Norme Banque d\\'Algérie)';
+          else if (actualKey === variant18Key) keyStatus = ' (CONFORME - Variante 18 ch.)';
+          else keyStatus = ' (ERRONÉE ! Saisie: ' + actualKey + ', attendu: ' + expectedKey + ')';
+        }
 
         resEl.className = isMatch ? 'result-box status-ok' : 'result-box status-ko';
         resEl.textContent = 
-          '=== RÉSULTAT DU CALCUL RIB BANCAIRE (MOD 97) ===\\n' +
+          '=== RÉSULTAT DU CALCUL RIB BANCAIRE (BANQUE D\\'ALGÉRIE) ===\\n' +
           'Code Banque  : ' + bank + '\\n' +
           'Code Guichet : ' + agency.padStart(5,'0') + '\\n' +
           'N° Compte    : ' + account.padStart(10,'0') + '\\n' +
-          'Clé Mod 97   : ' + expectedKey + (actualKey ? (isMatch ? ' (CONFORME)' : ' (ERRONÉE ! Saisie: ' + actualKey + ')') : '') + '\\n' +
+          'Clé Officielle: ' + expectedKey + ' (Instruction 62-94 sur Agence + Compte)' + keyStatus + '\\n' +
+          'Variante 18 ch.: ' + variant18Key + ' (Banque + Agence + Compte)\\n' +
           'RIB Complet  : ' + fullRib + '\\n' +
           'Équiv. CCP   : ' + account.slice(-10).padStart(10, '0');
       } else {

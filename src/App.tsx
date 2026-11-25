@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Menu, Moon, Sun, Upload } from 'lucide-react';
+import { Bell, Eye, EyeOff, Menu, Moon, Sun, Upload } from 'lucide-react';
 import {
   AnalysisReport,
   DecodedFileResult,
@@ -7,25 +7,40 @@ import {
   HistoryEntry,
   ValidationProfile,
 } from './types/ccp';
+import { ToastItem } from './types/toast';
 import { analyzeDecodedFile } from './engine/analyzer';
 import { decodeRawStringAsFile } from './engine/fileParser';
 import { detectFileFormat } from './engine/formatDetector';
 import { buildDefaultProfiles } from './engine/profiles';
 import { SAMPLE_FILES_CATALOG } from './engine/samplesAndTests';
+import { playAudioAlert } from './engine/soundAlert';
 import { CcpKeyCalculatorView } from './components/CcpKeyCalculatorView';
 import { DashboardView } from './components/DashboardView';
 import { DocsView } from './components/DocsView';
 import { FileBuilderView } from './components/FileBuilderView';
 import { ImportView } from './components/ImportView';
+import { NotificationCenterDropdown } from './components/NotificationCenterDropdown';
 import { OfflineInstallView } from './components/OfflineInstallView';
 import { ProfilesView } from './components/ProfilesView';
-import { ResultsView } from './components/ResultsView';
+import { AnomalyFilter, ResultsView } from './components/ResultsView';
 import { NavTab, Sidebar } from './components/Sidebar';
 import { TestsView } from './components/TestsView';
+import { ToastContainer } from './components/ToastContainer';
 
 const PROFILES_STORAGE_KEY = 'verifccp_profiles_v5';
 const LEGACY_PROFILES_STORAGE_KEYS = ['verifccp_profiles_v4', 'verifccp_profiles_v3'];
 const THEME_STORAGE_KEY = 'verifccp_theme';
+const SOUND_STORAGE_KEY = 'verifccp_sound_alerts';
+
+function loadInitialSoundPreference(): boolean {
+  try {
+    const saved = localStorage.getItem(SOUND_STORAGE_KEY);
+    if (saved !== null) return saved === 'true';
+  } catch {
+    // ignore
+  }
+  return true;
+}
 
 type ThemeMode = 'light' | 'dark';
 
@@ -96,6 +111,65 @@ export default function App() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
+  // Toast notifications & Centre d'alertes
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [notificationsHistory, setNotificationsHistory] = useState<ToastItem[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(loadInitialSoundPreference);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [resultsInitialFilter, setResultsInitialFilter] = useState<AnomalyFilter | undefined>(undefined);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SOUND_STORAGE_KEY, String(soundEnabled));
+    } catch {
+      // ignorer
+    }
+  }, [soundEnabled]);
+
+  const triggerToast = (toast: ToastItem) => {
+    setToasts((prev) => [toast, ...prev.filter((t) => t.id !== toast.id)].slice(0, 4));
+    setNotificationsHistory((prev) => [toast, ...prev].slice(0, 40));
+    playAudioAlert(
+      toast.type === 'critical' ? 'critical' : toast.type === 'success' ? 'success' : 'warning',
+      !soundEnabled
+    );
+  };
+
+  const handleDismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleClearAllToasts = () => {
+    setToasts([]);
+  };
+
+  const handleSimulateCriticalToast = () => {
+    const simId = `sim-crit-${Date.now()}`;
+    triggerToast({
+      id: simId,
+      type: 'critical',
+      title: '3 anomalies critiques détectées !',
+      fileName: 'VIREMENT_DEC2026_TEST_ERREURS.TXT',
+      reportId: activeReportId ?? undefined,
+      criticalCount: 3,
+      message: 'Erreur clé RIP (ligne 2) et discordance de totalisation montant (ligne 1). Rejet immédiat Algérie Poste garanti.',
+      detail: 'Clé attendue : 24 vs Reçue : 55 · Total centimes discordant.',
+      createdAt: Date.now(),
+      duration: 12000,
+      action: {
+        label: 'Inspecter les anomalies',
+        onClick: () => {
+          setResultsInitialFilter('critical');
+          setActiveTab('results');
+        },
+      },
+      secondaryAction: {
+        label: 'Fermer',
+        onClick: () => handleDismissToast(simId),
+      },
+    });
+  };
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
@@ -137,6 +211,99 @@ export default function App() {
     };
     setHistory((prev) => [entry, ...prev].slice(0, 40));
     setActiveReportId(report.id);
+
+    // Déclenchement de la notification Toast pour alerter immédiatement l'utilisateur
+    const critCount = report.summary.countsBySeverity.critical;
+    const errCount = report.summary.countsBySeverity.error;
+    const warnCount = report.summary.countsBySeverity.warning;
+
+    if (critCount > 0) {
+      setResultsInitialFilter('critical');
+      triggerToast({
+        id: `crit-${report.id}-${Date.now()}`,
+        type: 'critical',
+        title: `${critCount} anomalie${critCount > 1 ? 's' : ''} critique${critCount > 1 ? 's' : ''} détectée${critCount > 1 ? 's' : ''} !`,
+        fileName: report.fileName,
+        reportId: report.id,
+        criticalCount: critCount,
+        message: `Ce fichier sera rejeté par Algérie Poste / Banque si transmis sans correction.`,
+        detail: `Format : ${report.profileName} · Lignes invalides : ${report.summary.invalidRecords} / ${report.summary.beneficiaryCount}`,
+        createdAt: Date.now(),
+        duration: 12000,
+        action: {
+          label: `Inspecter les ${critCount} critiques`,
+          onClick: () => {
+            setActiveReportId(report.id);
+            setResultsInitialFilter('critical');
+            setActiveTab('results');
+          },
+        },
+        secondaryAction: {
+          label: 'Tous les résultats',
+          onClick: () => {
+            setActiveReportId(report.id);
+            setResultsInitialFilter('all');
+            setActiveTab('results');
+          },
+        },
+      });
+    } else if (errCount > 0) {
+      setResultsInitialFilter('error');
+      triggerToast({
+        id: `err-${report.id}-${Date.now()}`,
+        type: 'error',
+        title: `${errCount} erreur${errCount > 1 ? 's' : ''} détectée${errCount > 1 ? 's' : ''}`,
+        fileName: report.fileName,
+        reportId: report.id,
+        message: `Des anomalies de niveau erreur ont été relevées dans le fichier.`,
+        detail: `Format : ${report.profileName} · Lignes invalides : ${report.summary.invalidRecords} / ${report.summary.beneficiaryCount}`,
+        createdAt: Date.now(),
+        duration: 8000,
+        action: {
+          label: 'Voir les anomalies',
+          onClick: () => {
+            setActiveReportId(report.id);
+            setResultsInitialFilter('error');
+            setActiveTab('results');
+          },
+        },
+      });
+    } else if (report.status === 'conforme') {
+      setResultsInitialFilter('all');
+      triggerToast({
+        id: `succ-${report.id}-${Date.now()}`,
+        type: 'success',
+        title: 'Fichier conforme à 100 %',
+        fileName: report.fileName,
+        reportId: report.id,
+        message: `0 anomalie critique. Fichier validé et prêt pour transmission (${report.summary.beneficiaryCount} bénéficiaires).`,
+        createdAt: Date.now(),
+        duration: 5000,
+        action: {
+          label: 'Voir rapport',
+          onClick: () => {
+            setActiveReportId(report.id);
+            setResultsInitialFilter('all');
+            setActiveTab('results');
+          },
+        },
+      });
+    } else if (warnCount > 0) {
+      setResultsInitialFilter('warning');
+      triggerToast({
+        id: `warn-${report.id}-${Date.now()}`,
+        type: 'warning',
+        title: `${warnCount} avertissement${warnCount > 1 ? 's' : ''}`,
+        fileName: report.fileName,
+        reportId: report.id,
+        message: `Fichier exploitable mais des points de vigilance ont été identifiés.`,
+        createdAt: Date.now(),
+        duration: 6000,
+      });
+    } else {
+      setResultsInitialFilter('all');
+    }
+
     setActiveTab('results');
   };
 
@@ -248,6 +415,45 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            {/* Centre d'alertes & notifications toast */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setNotificationCenterOpen((v) => !v)}
+                aria-label="Centre d'alertes et notifications"
+                title="Centre d'alertes et notifications"
+                className={`relative inline-flex items-center justify-center rounded-md border p-2 text-xs font-medium transition-colors ${
+                  notificationsHistory.filter((n) => n.type === 'critical').length > 0
+                    ? 'border-red-400/80 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-300'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <Bell className="h-3.5 w-3.5" />
+                {notificationsHistory.filter((n) => n.type === 'critical').length > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white shadow-sm animate-pulse">
+                    {notificationsHistory.filter((n) => n.type === 'critical').length}
+                  </span>
+                )}
+              </button>
+
+              <NotificationCenterDropdown
+                isOpen={notificationCenterOpen}
+                onClose={() => setNotificationCenterOpen(false)}
+                notifications={notificationsHistory}
+                soundEnabled={soundEnabled}
+                onToggleSound={() => setSoundEnabled((v) => !v)}
+                onClearNotifications={() => setNotificationsHistory([])}
+                onTestCriticalToast={handleSimulateCriticalToast}
+                onOpenReport={(reportId, filter) => {
+                  if (reportsMap[reportId]) {
+                    setActiveReportId(reportId);
+                    setResultsInitialFilter(filter === 'critical' ? 'critical' : 'all');
+                    setActiveTab('results');
+                  }
+                }}
+              />
+            </div>
+
             <button
               type="button"
               onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
@@ -304,6 +510,7 @@ export default function App() {
               onDeleteHistoryItem={handleDeleteHistoryItem}
               onGoImport={() => setActiveTab('import')}
               onGoOfflineInstall={() => setActiveTab('offline')}
+              onTriggerTestCriticalToast={handleSimulateCriticalToast}
               onQuickAnalyzeSample={(id) => void handleQuickAnalyzeSample(id)}
             />
           )}
@@ -316,6 +523,7 @@ export default function App() {
             <ResultsView
               report={activeReport}
               privacyMode={privacyMode}
+              initialFilter={resultsInitialFilter}
               onGoImport={() => setActiveTab('import')}
             />
           )}
@@ -354,6 +562,15 @@ export default function App() {
           {activeTab === 'offline' && <OfflineInstallView profiles={profiles} />}
         </main>
       </div>
+
+      {/* Floating Toast Notification Container */}
+      <ToastContainer
+        toasts={toasts}
+        onDismiss={handleDismissToast}
+        onClearAll={handleClearAllToasts}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled((v) => !v)}
+      />
     </div>
   );
 }

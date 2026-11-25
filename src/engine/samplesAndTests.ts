@@ -1,7 +1,13 @@
 import { AutomatedTestResult, ValidationProfile } from '../types/ccp';
 import { analyzeDecodedFile } from './analyzer';
 import { evaluateAccountCompliance, evaluateBatchAccounts } from './ccpKeyCalculator';
-import { computeBankRibKey, computeCcpKey, computeRipKeyOffset85 } from './cryptoKeys';
+import {
+  computeBankRibKey,
+  computeBankRibKey18,
+  computeCcpKey,
+  computeRipKeyOffset85,
+  validateBankRib,
+} from './cryptoKeys';
 import { decodeRawStringAsFile } from './fileParser';
 import { detectFileFormat } from './formatDetector';
 import { buildDefaultProfiles } from './profiles';
@@ -703,6 +709,45 @@ export async function runAutomatedTestSuite(profilesArg?: ValidationProfile[]): 
       return {
         passed: ok,
         actualSummary: `Détecté=${det.detectedFormat} (delim=${det.delimiter}, header=${det.hasHeader}), lignes=${rep.summary.beneficiaryCount}, total=${rep.summary.computedTotalCentimes / 100} DA, statut=${rep.status}`,
+      };
+    }
+  );
+
+  // 20. Exactitude de la clé bancaire officielle Banque d'Algérie (ABC Bank 014 / Clé 48 vs variante 01)
+  await runCase(
+    'T20',
+    'Conformité clé bancaire Banque d’Algérie : compte 014003411681930101 -> Clé officielle 48 et variante 01',
+    'Format RIB Bancaire',
+    'rib',
+    'Valide que l’algorithme officiel DZ (sur Agence 5 + Compte 10) produit exactement la clé 48 pour le compte 014 00341 1681930101, et accepte la variante 01',
+    'compte_014_cle_48.txt',
+    '*014003411681930101480000005000000ABC CLIENT TEST             1',
+    async () => {
+      const kOfficial = computeBankRibKey('014', '00341', '1681930101');
+      const kVariant18 = computeBankRibKey18('014', '00341', '1681930101');
+      const valOfficial = validateBankRib('01400341168193010148');
+      const valVariant18 = validateBankRib('01400341168193010101');
+      const valBad = validateBankRib('01400341168193010199');
+      const evalOfficial = evaluateAccountCompliance('01400341168193010148', 'bank-rib');
+      const evalNoKey = evaluateAccountCompliance('014003411681930101', 'bank-rib');
+
+      const ok =
+        kOfficial === '48' &&
+        kVariant18 === '01' &&
+        valOfficial.valid === true &&
+        valOfficial.expectedKey === '48' &&
+        valOfficial.matchedStandard === 'algerie-15' &&
+        valVariant18.valid === true &&
+        valVariant18.expectedKey === '01' &&
+        valVariant18.matchedStandard === 'etendu-18' &&
+        valBad.valid === false &&
+        evalOfficial.compliance?.status === 'conforme' &&
+        evalNoKey.calculation?.bankRib?.keyMod97 === '48' &&
+        evalNoKey.calculation?.bankRib?.keyMod97_18 === '01';
+
+      return {
+        passed: ok,
+        actualSummary: `Clé officielle=${kOfficial} (attendu: 48), variante 18=${kVariant18} (attendu: 01), val48=${valOfficial.valid}, val01=${valVariant18.valid}, calcul=${evalNoKey.calculation?.bankRib?.keyMod97}`,
       };
     }
   );

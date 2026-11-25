@@ -27,6 +27,14 @@ const QUICK_EXAMPLES: Array<{
   agencyCode?: string;
 }> = [
   {
+    label: 'ABC / Al Salam 014 (Clé 48 - votre compte)',
+    account: '01400341168193010148',
+    key: '48',
+    format: 'bank-rib',
+    bankCode: '014',
+    agencyCode: '00341',
+  },
+  {
     label: 'RIP 5040 (Clé 55)',
     account: '00799999000000504055',
     key: '',
@@ -39,24 +47,24 @@ const QUICK_EXAMPLES: Array<{
     format: 'non-rip',
   },
   {
-    label: 'BNA 001 (Clé 44)',
-    account: '00100101001234567844',
+    label: 'BNA 001 (Clé 82)',
+    account: '00100101001234567882',
     key: '',
     format: 'bank-rib',
     bankCode: '001',
     agencyCode: '00101',
   },
   {
-    label: 'BEA 002 (Clé 92)',
-    account: '00200050000045678992',
+    label: 'BEA 002 (Clé 71)',
+    account: '00200050000045678971',
     key: '',
     format: 'bank-rib',
     bankCode: '002',
     agencyCode: '00050',
   },
   {
-    label: 'Trésor 008 (Clé 38)',
-    account: '00800016000012345638',
+    label: 'Trésor 008 (Clé 51)',
+    account: '00800016000012345651',
     key: '',
     format: 'bank-rib',
     bankCode: '008',
@@ -569,13 +577,18 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
                   <div className="p-5 flex flex-col justify-between gap-3">
                     <div>
                       <p className="text-xs font-medium text-slate-500">
-                        Clé RIB (Mod 97 · {calc.bankRib.bankShortName})
+                        Clé RIB officielle (Banque d&apos;Algérie)
                       </p>
                       <p className="mt-2 font-mono text-3xl font-bold text-[#0F2942] tabular-nums">
                         {calc.bankRib.keyMod97}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
                         Code banque <span className="font-mono font-semibold text-slate-700">{calc.bankRib.bankCode}</span>
+                        {calc.bankRib.keyMod97_18 && calc.bankRib.keyMod97_18 !== calc.bankRib.keyMod97 && (
+                          <span className="block text-slate-500 mt-0.5">
+                            Variante 18 ch. : <strong className="font-mono text-slate-700">{calc.bankRib.keyMod97_18}</strong>
+                          </span>
+                        )}
                       </p>
                     </div>
                     <button
@@ -584,7 +597,7 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F2942] hover:underline self-start"
                     >
                       {copiedId === 'bankRibKey' ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                      <span>{copiedId === 'bankRibKey' ? 'Copié' : 'Copier la clé RIB'}</span>
+                      <span>{copiedId === 'bankRibKey' ? 'Copié' : `Copier la clé (${calc.bankRib.keyMod97})`}</span>
                     </button>
                   </div>
 
@@ -622,7 +635,7 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
                       </p>
                     </div>
                     <span className="text-[11px] font-medium text-slate-500">
-                      Base 18 chiffres pour Modulo 97
+                      Base officielle : Agence (5) + Compte (10)
                     </span>
                   </div>
 
@@ -650,16 +663,16 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
                     ) : (
                       <>
                         <div>
-                          <p className="text-xs font-medium text-slate-500">Preuve mathématique</p>
+                          <p className="text-xs font-medium text-slate-500">Norme Banque d&apos;Algérie</p>
                           <p className="mt-2 font-mono text-2xl font-bold text-emerald-700 tabular-nums">
-                            RIB mod 97 = 0
+                            Clé : {calc.bankRib.keyMod97}
                           </p>
                           <p className="mt-1 text-xs text-slate-500">
-                            Conforme norme interbancaire algérienne
+                            Instruction n°62-94 / Interbancaire DZ
                           </p>
                         </div>
                         <span className="text-[11px] font-medium text-emerald-700">
-                          Clé comprise entre 01 et 97
+                          {calc.bankRib.keyMod97_18 ? `Variante 18 ch. : ${calc.bankRib.keyMod97_18}` : 'Clé comprise entre 01 et 97'}
                         </span>
                       </>
                     )}
@@ -673,25 +686,25 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
                       Détail du calcul de la Clé RIB Bancaire (Banque d&apos;Algérie — Modulo 97)
                     </h2>
                     <span className="font-mono text-xs text-slate-600 tabular-nums">
-                      97 − ((Base18 × 100) mod 97) = <strong className="text-[#0F2942]">{calc.bankRib.keyMod97}</strong>
+                      97 − ((Base15 × 100) mod 97) = <strong className="text-[#0F2942]">{calc.bankRib.keyMod97}</strong>
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
                     <div className="rounded border border-slate-200 bg-slate-50 px-3.5 py-2.5">
                       <span className="block font-sans text-[11px] text-slate-500">
-                        1. Base 18 chiffres (Banque + Agence + Compte)
+                        1. Base 15 chiffres (Agence + Compte)
                       </span>
                       <span className="mt-1 block font-semibold text-slate-900 break-all">
                         {privacyMode
-                          ? `${calc.bankRib.bankCode}${calc.bankRib.agencyCode}••••••••••`
-                          : `${calc.bankRib.bankCode} ${calc.bankRib.agencyCode} ${calc.bankRib.account10}`}
+                          ? `${calc.bankRib.agencyCode}••••••••••`
+                          : `${calc.bankRib.agencyCode} ${calc.bankRib.account10}`}
                       </span>
                     </div>
 
                     <div className="rounded border border-slate-200 bg-slate-50 px-3.5 py-2.5">
                       <span className="block font-sans text-[11px] text-slate-500">
-                        2. Reste R = (Base18 × 100) mod 97
+                        2. Reste R = (Base15 × 100) mod 97
                       </span>
                       <span className="mt-1 block font-semibold text-slate-900">
                         R = {calc.bankRib.stepRemMod97}
@@ -700,7 +713,7 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
 
                     <div className="rounded border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5">
                       <span className="block font-sans text-[11px] text-emerald-800">
-                        3. Clé RIB = 97 − R
+                        3. Clé officielle DZ = 97 − R
                       </span>
                       <span className="mt-1 block font-bold text-emerald-800">
                         97 − {calc.bankRib.stepRemMod97} = {calc.bankRib.keyMod97}
@@ -709,10 +722,10 @@ export function CcpKeyCalculatorView({ privacyMode }: CcpKeyCalculatorViewProps)
 
                     <div className="rounded border border-slate-200 bg-slate-50 px-3.5 py-2.5">
                       <span className="block font-sans text-[11px] text-slate-500">
-                        4. Contrôle RIB20 mod 97
+                        4. Variante 18 chiffres (Banque inclus)
                       </span>
-                      <span className="mt-1 block font-semibold text-emerald-700">
-                        ({calc.bankRib.stepRemMod97} + {Number(calc.bankRib.keyMod97)}) mod 97 = 0
+                      <span className="mt-1 block font-semibold text-slate-700">
+                        97 − {calc.bankRib.stepRemMod97_18} = <span className="font-bold text-slate-900">{calc.bankRib.keyMod97_18}</span>
                       </span>
                     </div>
                   </div>
