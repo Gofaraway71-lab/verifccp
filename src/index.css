@@ -1,0 +1,303 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "Public Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-navy-950: #091B2E;
+  --color-navy-900: #0F2942;
+  --color-navy-800: #163A5C;
+  --color-navy-700: #1E4E79;
+  --color-navy-100: #E6EEF5;
+  --color-navy-50: #F2F6FA;
+
+  --color-brass-700: #8C6416;
+  --color-brass-600: #B48224;
+  --color-brass-100: #FAF3E3;
+}
+
+:root {
+  color-scheme: light;
+  --surface-app: #F6F8FA;
+  --surface-card: #FFFFFF;
+  --surface-subtle: #F8FAFC;
+  --surface-muted: #F1F5F9;
+  --surface-track: #E2E8F0;
+  --surface-hover: #F1F5F9;
+
+  --border-default: #E2E8F0;
+  --border-subtle: #F1F5F9;
+  --border-strong: #CBD5E1;
+
+  --text-primary: #0F172A;
+  --text-strong: #1E293B;
+  --text-secondary: #334155;
+  --text-body: #475569;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+
+  --accent-primary: var(--color-navy-900);
+  --accent-hover: var(--color-navy-800);
+  --accent-text: var(--color-navy-900);
+  --focus-ring: var(--color-navy-900);
+}
+
+.dark {
+  color-scheme: dark;
+  --surface-app: #081320;
+  --surface-card: #0E1D30;
+  --surface-subtle: #12253C;
+  --surface-muted: #162D48;
+  --surface-track: #1B3656;
+  --surface-hover: #183250;
+
+  --border-default: #1E3A58;
+  --border-subtle: #162D46;
+  --border-strong: #2C4E73;
+
+  --text-primary: #F1F5F9;
+  --text-strong: #E2E8F0;
+  --text-secondary: #CBD5E1;
+  --text-body: #94A3B8;
+  --text-muted: #8BA3BC;
+  --text-faint: #647E9A;
+
+  --accent-primary: #2563A6;
+  --accent-hover: #2E73BE;
+  --accent-text: #93C5FD;
+  --focus-ring: #60A5FA;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: var(--surface-app);
+    color: var(--text-primary);
+  }
+
+  body {
+    background-color: var(--surface-app);
+    color: var(--text-primary);
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  button, [role="button"] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Mode sombre confortable alimenté par les variables CSS définies ci-dessus
+   ========================================================================== */
+.dark .bg-\[\#F6F8FA\] {
+  background-color: var(--surface-app);
+}
+
+.dark .bg-white,
+.dark .bg-white\/90 {
+  background-color: var(--surface-card);
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/50 {
+  background-color: var(--surface-subtle);
+}
+
+.dark .bg-slate-100,
+.dark .bg-slate-100\/80 {
+  background-color: var(--surface-muted);
+}
+
+.dark .bg-slate-200\/70,
+.dark .bg-slate-200 {
+  background-color: var(--surface-track);
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-50\/70:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--surface-hover);
+}
+
+.dark .border-slate-200,
+.dark .divide-slate-200 > :not(:last-child) {
+  border-color: var(--border-default);
+}
+
+.dark .border-slate-100,
+.dark .divide-slate-100 > :not(:last-child) {
+  border-color: var(--border-subtle);
+}
+
+.dark .border-slate-300 {
+  border-color: var(--border-strong);
+}
+
+.dark .text-slate-900 {
+  color: var(--text-primary);
+}
+
+.dark .text-slate-800 {
+  color: var(--text-strong);
+}
+
+.dark .text-slate-700 {
+  color: var(--text-secondary);
+}
+
+.dark .text-slate-600 {
+  color: var(--text-body);
+}
+
+.dark .text-slate-500 {
+  color: var(--text-muted);
+}
+
+.dark .text-slate-400,
+.dark .text-slate-300 {
+  color: var(--text-faint);
+}
+
+.dark .placeholder\:text-slate-400::placeholder {
+  color: var(--text-faint);
+}
+
+.dark .text-\[\#0F2942\] {
+  color: var(--accent-text);
+}
+
+.dark .bg-\[\#0F2942\] {
+  background-color: var(--accent-primary);
+}
+
+.dark .hover\:bg-\[\#163A5C\]:hover {
+  background-color: var(--accent-hover);
+}
+
+.dark .border-\[\#0F2942\] {
+  border-color: var(--accent-primary);
+}
+
+.dark .hover\:border-\[\#0F2942\]:hover {
+  border-color: var(--accent-primary);
+}
+
+.dark .hover\:bg-\[\#0F2942\]:hover {
+  background-color: var(--accent-primary);
+}
+
+.dark .hover\:text-slate-900:hover {
+  color: var(--text-primary);
+}
+
+/* Surfaces et textes sémantiques (conforme, avertissement, erreur) en mode sombre */
+.dark .bg-emerald-50,
+.dark .bg-emerald-50\/60,
+.dark .bg-emerald-50\/40 {
+  background-color: rgba(16, 185, 129, 0.12);
+}
+
+.dark .border-emerald-200,
+.dark .border-emerald-300 {
+  border-color: rgba(52, 211, 153, 0.32);
+}
+
+.dark .text-emerald-900,
+.dark .text-emerald-800,
+.dark .text-emerald-700 {
+  color: #6EE7B7;
+}
+
+.dark .bg-red-50,
+.dark .bg-red-50\/60,
+.dark .bg-red-50\/40 {
+  background-color: rgba(239, 68, 68, 0.13);
+}
+
+.dark .border-red-200,
+.dark .border-red-300 {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.dark .text-red-900,
+.dark .text-red-800,
+.dark .text-red-700 {
+  color: #FCA5A5;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-50\/60 {
+  background-color: rgba(245, 158, 11, 0.14);
+}
+
+.dark .border-amber-200,
+.dark .border-amber-300 {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.dark .text-amber-900,
+.dark .text-amber-800,
+.dark .text-amber-700 {
+  color: #FCD34D;
+}
+
+.dark .bg-blue-50,
+.dark .bg-sky-50 {
+  background-color: rgba(56, 189, 248, 0.12);
+}
+
+.dark .border-blue-200,
+.dark .border-sky-200 {
+  border-color: rgba(56, 189, 248, 0.32);
+}
+
+.dark .text-blue-900,
+.dark .text-blue-800,
+.dark .text-blue-700,
+.dark .text-sky-900,
+.dark .text-sky-800 {
+  color: #93C5FD;
+}
+
+/* Préserve l'identité institutionnelle sombre de la barre latérale */
+.dark aside {
+  background-color: var(--color-navy-950);
+  border-right: 1px solid var(--border-default);
+}
+
+/* Champs de saisie et selects en mode sombre */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--surface-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

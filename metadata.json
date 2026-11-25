@@ -1,0 +1,6 @@
+{
+  "name": "VérifCCP — Contrôle de Conformité CCP Algérie Poste",
+  "description": "Application locale de vérification et contrôle de conformité des fichiers CCP Algérie Poste (formats RIP et non-RIP), détection automatique, moteur de règles configurable et export de rapports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F2942" />
+      <stop offset="100%" stop-color="#071726" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A5F" />
+      <stop offset="100%" stop-color="#0E233B" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+
+  <!-- Subtle border -->
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="none" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="4" />
+
+  <!-- Shield Shape -->
+  <path d="M 256 80 L 380 140 C 380 270 256 380 256 380 C 256 380 132 270 132 140 Z" 
+        fill="url(#shieldGrad)" 
+        stroke="url(#gold)" 
+        stroke-width="12" 
+        stroke-linejoin="round" />
+
+  <!-- Checkmark in Shield -->
+  <path d="M 195 230 L 238 275 L 322 185" 
+        fill="none" 
+        stroke="#10B981" 
+        stroke-width="20" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+
+  <!-- CCP / RIP Symbol badge -->
+  <rect x="176" y="405" width="160" height="42" rx="10" fill="#F59E0B" />
+  <text x="256" y="434" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="22" fill="#0F2942" letter-spacing="2">
+    VÉRIF·CCP
+  </text>
+</svg>

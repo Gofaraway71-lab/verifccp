@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "VérifCCP — Contrôle de Conformité CCP & RIB Algérie Poste",
+  "short_name": "VérifCCP",
+  "description": "Application autonome de contrôle de conformité des fichiers de virement CCP Algérie Poste et RIB bancaires algériens (100% hors-ligne)",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F2942",
+  "theme_color": "#0F2942",
+  "categories": ["finance", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
